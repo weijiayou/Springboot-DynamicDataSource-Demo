@@ -1,0 +1,13 @@
+package com.tianlian.actionCapture.foo.service;
+
+import com.tianlian.actionCapture.foo.model.StaffPO;
+import java.util.List;
+
+public interface IFooService {
+
+  void aaa();
+
+  List<StaffPO> getStaff();
+
+  String getUserName();
+}

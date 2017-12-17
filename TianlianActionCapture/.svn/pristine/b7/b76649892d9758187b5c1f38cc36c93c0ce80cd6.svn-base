@@ -1,0 +1,118 @@
+package com.tianlian.spark;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.tianlian.hbase.api.HbaseInsert;
+import com.tianlian.spark.utils.SparkBusinessUtils;
+import com.tianlian.spark.utils.SparkUtils;
+import com.tianlian.spark.utils.vo.KafkaObject;
+import java.io.InputStream;
+import java.util.Properties;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaPairReceiverInputDStream;
+import org.apache.spark.streaming.api.java.JavaStreamingContext;
+
+public class ActionCaptureHBaseApp {
+
+  public static void main(String[] args) throws InterruptedException {
+
+    InputStream out = ActionCaptureHBaseApp.class
+        .getResourceAsStream("/properties/SparkConf.properties");
+    Properties properties = new Properties();
+    try {
+      properties.load(out);
+    } catch (Exception ex) {
+      ex.toString();
+    }
+
+    KafkaObject kafkaObject = new KafkaObject();
+    kafkaObject.setZk_quorum(properties.getProperty("ZK_QUORUM"));
+    kafkaObject.setNum_thread(Integer.parseInt(properties
+        .getProperty("NUM_THREAD")));
+    kafkaObject.setTopicss(properties.getProperty("TOPICSS"));
+    kafkaObject.setSpark_url(properties.getProperty("SPARK_URL"));
+
+    SparkUtils sparkUtils = new SparkUtils(kafkaObject);
+
+    // 获取spark 上下文 2个参数
+    JavaStreamingContext ssc = sparkUtils.getContext(2000,
+        "TianlianActionCapture-HBase");
+
+    // 从kafka取出的流式数据转换RDD
+    JavaPairReceiverInputDStream<String, String> messages = sparkUtils
+        .getMessages(ssc, "Spark-Hbase");
+
+    JavaDStream<String> words = SparkBusinessUtils.kafkaFlatMap(messages,"~.~");
+
+    words.foreachRDD(new VoidFunction<JavaRDD<String>>() {
+      private static final long serialVersionUID = -7228744705014498026L;
+
+      @Override
+      public void call(JavaRDD<String> arg0) throws Exception {
+        arg0.foreach(new VoidFunction<String>() {
+          private static final long serialVersionUID = 1L;
+
+          @Override
+          public void call(String arg0) throws Exception {
+
+            String jsonStr = arg0;
+//            long userId = 0l;
+            String cookieId = "";
+            long idactionVisitTime = 0l;
+            String customerCountyId = "";
+//            String formatUserId = null;
+            JSONObject json = null;
+            if (isNull(jsonStr)) {
+              json = JSON.parseObject(jsonStr);
+              cookieId = json.getString("cookie_id");
+              idactionVisitTime = json.getLong("idaction_visit_time");
+              // id 不满6位 用0 补位
+//              formatUserId = getString_6(String.valueOf(userId));
+              customerCountyId = json.getString("customer_countyId");
+            }
+            HbaseInsert.insertRowsByJson(
+                "Action_Capture_Tlzx_Detail",
+                getRowKey(customerCountyId, String.valueOf(idactionVisitTime), cookieId), "Detail", json);
+
+
+          }
+        });
+      }
+    });
+    words.print();
+    ssc.start();
+    ssc.awaitTermination();
+  }
+
+  /**
+   * 拼接hbase rowKey
+   * @param customerCountyId
+   * @param time
+   * @param cookieId
+   * @return
+   */
+  public static String getRowKey(String customerCountyId, String time, String cookieId) {
+    StringBuilder sb = new StringBuilder(customerCountyId);
+    sb.append("_");
+    sb.append(time);
+    sb.append("_");
+    sb.append(cookieId);
+    return sb.toString();
+  }
+
+  /**
+   * 校验字符 是否为空
+   *
+   * @param str
+   *            传入的字符
+   * @return
+   */
+  public static boolean isNull(String str) {
+    if (str == null || str.equals("")) {
+      return false;
+    }
+    return true;
+  }
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tianlian.server.dao.mapper.FooMapper">
+  <resultMap id="BaseResultMap" type="com.tianlian.actionCapture.foo.model.StaffPO">
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="staff_no" jdbcType="VARCHAR" property="staffNo" />
+    <result column="login_name" jdbcType="VARCHAR" property="loginName" />
+    <result column="login_password" jdbcType="VARCHAR" property="loginPassword" />
+    <result column="sex" jdbcType="VARCHAR" property="sex" />
+  </resultMap>
+  <select id="getStaffNameById" parameterType="java.lang.String" resultType="java.lang.String">
+    select
+      staff_name
+    from saas_staff
+    where id = #{userId}
+  </select>
+
+  <select id="getStaff" resultMap="BaseResultMap">
+    select id,staff_no,login_name,login_password,sex from saas_staff
+  </select>
+
+  <select id="getUserName" parameterType="java.lang.String" resultType="java.lang.String">
+    select * from USERLOGININFO ui where ui.USERID=#{userId}
+  </select>
+</mapper>

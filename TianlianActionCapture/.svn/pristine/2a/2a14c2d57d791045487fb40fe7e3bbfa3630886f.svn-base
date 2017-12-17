@@ -1,0 +1,4 @@
+hbase.quorem=yz-bigdata-master01,yz-bigdata-master02,yz-bigdata-slave01,yz-bigdata-slave02,yz-bigdata-slave03,yz-bigdata-slave04,yz-bigdata-slave05,yz-bigdata-slave06,yz-bigdata-slave07,yz-bigdata-slave08,yz-bigdata-slave09,yz-bigdata-slave10,yz-bigdata-slave11,yz-bigdata-slave12,yz-bigdata-slave13,yz-bigdata-slave14,yz-bigdata-slave15,yz-bigdata-slave16,yz-bigdata-slave17,yz-bigdata-slave18,yz-bigdata-slave19
+hbase.zkport=2181
+hbase.master=60000
+#hbase.master=hdfs://192.168.114.22:60000
